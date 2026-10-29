@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Governing agentic AI across the Microsoft stack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F6; --panel:#FFFFFF; --ink:#18212B; --muted:#5A6673; --line:#CBD3DB;
+  --accent:#23508F; --accent-ink:#FFFFFF;
+  --low:#4F7F63; --med:#A8720E; --high:#A9392F;
+  --govern:#23508F; --map:#4F7F63; --measure:#A8720E; --manage:#6B4C9A;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#151B22; --panel:#1D252E; --ink:#E6EBF0; --muted:#9AA7B4; --line:#334150;
+    --accent:#7FA6E0; --accent-ink:#0F1A2A;
+    --low:#7DB592; --med:#D9A441; --high:#E07A6F;
+    --govern:#7FA6E0; --map:#7DB592; --measure:#D9A441; --manage:#B49AE0;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151B22; --panel:#1D252E; --ink:#E6EBF0; --muted:#9AA7B4; --line:#334150;
+  --accent:#7FA6E0; --accent-ink:#0F1A2A;
+  --low:#7DB592; --med:#D9A441; --high:#E07A6F;
+  --govern:#7FA6E0; --map:#7DB592; --measure:#D9A441; --manage:#B49AE0;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-variation-settings:"wdth" 100;
+  line-height:1.5;font-size:1rem;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:2.5rem 1.25rem 3rem}
+header{max-width:44rem}
+.byline{color:var(--muted);font-size:.9rem;margin:0 0 1rem}
+h1{
+  font-variation-settings:"wdth" 118;font-weight:780;
+  font-size:clamp(2rem,6vw,3.4rem);line-height:1.02;letter-spacing:-.015em;margin:0 0 1rem;
+}
+.lede{font-size:1.08rem;color:var(--muted);margin:0;max-width:38rem}
+
+.controls{margin:2rem 0 1.25rem;display:grid;gap:1rem}
+.group-label{font-size:.85rem;color:var(--muted);margin:0 0 .4rem;font-weight:600}
+.tiers{display:inline-flex;border:1.5px solid var(--ink);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.tiers button{
+  font:inherit;font-weight:600;border:0;background:transparent;color:var(--ink);
+  padding:.45rem 1rem;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:.45rem;
+}
+.tiers button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.dot{width:.6rem;height:.6rem;border-radius:2px;display:inline-block;flex:none}
+.tier-note{font-size:.92rem;color:var(--muted);margin:.5rem 0 0;max-width:40rem}
+
+.tools{display:flex;flex-wrap:wrap;gap:.4rem}
+.tools button{
+  font:inherit;font-size:.86rem;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+  padding:.3rem .7rem;border-radius:6px;cursor:pointer;
+}
+.tools button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+.summary{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem 1.5rem;margin:0 0 1rem;font-size:.95rem}
+.summary strong{font-variation-settings:"wdth" 112}
+.nist{display:flex;gap:.9rem;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.nist span{display:inline-flex;align-items:center;gap:.35rem}
+.nistbar{display:flex;height:6px;border-radius:3px;overflow:hidden;width:100%;max-width:520px;background:var(--line)}
+.nistbar i{display:block;height:100%;transition:width .3s ease}
+
+.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;border-top:2px solid var(--ink);padding-bottom:.25rem}
+.grid{
+  display:grid;grid-template-columns:minmax(118px,1.1fr) repeat(6,minmax(78px,1fr));
+  min-width:640px;
+}
+.colhead,.rowhead{font-size:.84rem;font-weight:650;line-height:1.2;padding:.7rem .5rem}
+.colhead{border-bottom:1px solid var(--line);display:flex;align-items:flex-end}
+.rowhead{
+  border-bottom:1px solid var(--line);position:sticky;left:0;background:var(--paper);z-index:1;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.rowhead small{display:block;font-weight:400;color:var(--muted);font-size:.76rem;margin-top:.2rem}
+.corner{border-bottom:1px solid var(--line);position:sticky;left:0;background:var(--paper);z-index:1}
+.cell{
+  font:inherit;color:var(--ink);border:0;border-bottom:1px solid var(--line);border-left:1px solid var(--line);
+  min-height:76px;cursor:pointer;position:relative;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.15rem;
+  background:color-mix(in srgb,var(--accent) var(--fill,0%),var(--panel));
+  transition:background .25s ease;
+}
+.cell .n{font-variation-settings:"wdth" 120;font-weight:760;font-size:1.45rem;line-height:1}
+.cell .u{font-size:.72rem;color:inherit;opacity:.75}
+.cell.dark{color:var(--accent-ink)}
+.cell.empty .n{opacity:.3}
+.cell[aria-pressed="true"]{outline:3px solid var(--ink);outline-offset:-3px;z-index:2}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.cell:focus-visible{outline-offset:-3px}
+
+.detail{margin-top:1.75rem;background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--accent);padding:1.5rem 1.25rem}
+.detail h2{font-variation-settings:"wdth" 112;font-weight:740;font-size:1.45rem;line-height:1.15;margin:0 0 .3rem}
+.detail .sub{color:var(--muted);margin:0 0 1.1rem;font-size:.95rem}
+.ctl{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.ctl li{padding:.85rem 0;border-top:1px solid var(--line);display:grid;grid-template-columns:5.2rem 1fr;gap:.25rem 1rem}
+.ctl li.locked{opacity:.45}
+.ctl .tier{font-size:.8rem;font-weight:650;display:flex;align-items:flex-start;gap:.4rem;padding-top:.2rem}
+.ctl .tier .dot{margin-top:.25rem}
+.ctl p{margin:0;max-width:44rem}
+.tags{grid-column:2;display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.35rem}
+.tag{font-size:.78rem;border:1px solid var(--line);border-radius:4px;padding:.1rem .45rem;color:var(--muted)}
+.tag.tool{color:var(--ink);font-weight:600}
+.tag.hit{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.lock-note{grid-column:2;font-size:.8rem;color:var(--muted);margin-top:.2rem}
+
+.method{margin-top:3rem;display:grid;gap:2rem;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.method h3{font-variation-settings:"wdth" 110;font-size:1.1rem;margin:0 0 .5rem}
+.method p,.method li{color:var(--muted);font-size:.95rem;margin:0 0 .5rem}
+.method ul{margin:0;padding-left:1.1rem}
+.case-link{margin:1.25rem 0 0;font-weight:600}
+.case-link a{color:var(--accent);text-underline-offset:3px;text-decoration-thickness:1.5px}
+.case-link a:hover{text-decoration-thickness:2.5px}
+footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);color:var(--muted);font-size:.82rem}
+@media (max-width:560px){
+  .wrap{padding-top:1.75rem}
+  .ctl li{grid-template-columns:1fr}
+  .tags,.lock-note{grid-column:1}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="byline">A portfolio concept by [Your Name]</p>
+    <h1>Governing agentic AI across the Microsoft stack</h1>
+    <p class="lede">Seventy-two controls that map Microsoft’s six Responsible AI principles to the platforms that enforce them, from Fabric data to Copilot agents. Choose a risk tier, then tap any cell to see what’s required.</p>
+    <p class="case-link"><a href="https://github.com/Ifekiitan/ai-governance-matrix/blob/main/case-study-hr-agent.md">See it in practice: a case study of governing a high-risk HR agent</a></p>
+  </header>
+
+  <section class="controls" aria-label="Filters">
+    <div>
+      <p class="group-label" id="tier-label">Risk tier of the AI system</p>
+      <div class="tiers" role="group" aria-labelledby="tier-label" id="tiers"></div>
+      <p class="tier-note" id="tier-note"></p>
+    </div>
+    <div>
+      <p class="group-label" id="tool-label">Highlight a platform</p>
+      <div class="tools" role="group" aria-labelledby="tool-label" id="tools"></div>
+    </div>
+  </section>
+
+  <div class="summary" aria-live="polite">
+    <span id="sum-text"></span>
+    <div style="flex:1;min-width:240px">
+      <div class="nistbar" id="nistbar" aria-hidden="true"></div>
+      <div class="nist" id="nistlegend" style="margin-top:.45rem"></div>
+    </div>
+  </div>
+
+  <div class="scroller">
+    <div class="grid" id="grid" role="group" aria-label="Control matrix: layers by principles"></div>
+  </div>
+
+  <section class="detail" id="detail" aria-live="polite"></section>
+
+  <section class="method">
+    <div>
+      <h3>How the matrix is built</h3>
+      <p>Rows follow the AI stack, because a gap in the data layer creates different harm than a gap in an agent’s permissions. Columns are Microsoft’s six Responsible AI principles. Each control is tagged with the NIST AI RMF function it serves: Govern, Map, Measure, or Manage.</p>
+    </div>
+    <div>
+      <h3>How the tiers work</h3>
+      <ul>
+        <li>Tiers are cumulative. Medium inherits every Low control, and High inherits both.</li>
+        <li>Tier is set at intake from impact, data sensitivity, and autonomy, and is reviewed whenever an agent gains new tools or data.</li>
+        <li>Controls marked “Process” are owned by people, not platforms: review boards, owners, audits.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Frameworks referenced</h3>
+      <p>Microsoft Responsible AI principles, NIST AI Risk Management Framework, ISO/IEC 42001, and the EU AI Act’s risk-based approach.</p>
+    </div>
+  </section>
+
+  <footer>
+    Independent portfolio concept. Not affiliated with or endorsed by Microsoft. Product names and capabilities reflect public documentation and may change.
+  </footer>
+</div>
+
+<script>
+const TIERS = [
+  {id:1, name:"Low", color:"var(--low)", note:"Internal productivity with no sensitive data, where a person reviews every output. Example: summarizing public product docs."},
+  {id:2, name:"Medium", color:"var(--med)", note:"Touches confidential data or acts on a user’s behalf. Example: a sales agent drafting emails from CRM records."},
+  {id:3, name:"High", color:"var(--high)", note:"Affects people’s rights, money, or safety, or acts with real autonomy. Example: an HR agent that ranks job applicants."}
+];
+const LAYERS = [
+  {id:"data", name:"Data", sub:"Fabric, Purview"},
+  {id:"model", name:"Model", sub:"Foundry, Azure ML"},
+  {id:"agent", name:"Agent & app", sub:"Copilot Studio, M365 Copilot, GitHub Copilot"},
+  {id:"sec", name:"Security & assurance", sub:"Entra, Defender, Sentinel"}
+];
+const PRINCIPLES = [
+  {id:"fair", name:"Fairness"},
+  {id:"rel", name:"Reliability & safety"},
+  {id:"priv", name:"Privacy & security"},
+  {id:"incl", name:"Inclusiveness"},
+  {id:"trans", name:"Transparency"},
+  {id:"acct", name:"Accountability"}
+];
+const NIST = [
+  {id:"Govern", color:"var(--govern)"},
+  {id:"Map", color:"var(--map)"},
+  {id:"Measure", color:"var(--measure)"},
+  {id:"Manage", color:"var(--manage)"}
+];
+// [tier, control, tool, NIST function]
+const C = {
+  "data|fair":[
+    [1,"Profile training and grounding datasets for representation gaps before any agent uses them.","Fabric","Map"],
+    [2,"Record each dataset’s provenance and known gaps in the Purview Unified Catalog.","Purview","Govern"],
+    [3,"Require a documented fairness review of source data for any agent that informs decisions about people.","Process","Measure"]],
+  "data|rel":[
+    [1,"Ground agents only on endorsed or certified Fabric items, not ad hoc copies.","Fabric","Manage"],
+    [2,"Trace lineage from source system to agent in the Purview Data Map.","Purview","Map"],
+    [3,"Set data quality rules with alerts for freshness and completeness on every grounding source.","Purview","Measure"]],
+  "data|priv":[
+    [1,"Auto-apply sensitivity labels to content in OneLake and Microsoft 365.","Purview","Manage"],
+    [2,"Use DLP policies to keep highly confidential labeled content out of Copilot and agent processing.","Purview","Manage"],
+    [3,"Enforce row-level and OneLake security so agents inherit least-privilege data access.","Fabric","Manage"]],
+  "data|incl":[
+    [1,"Include multilingual and accessibility-relevant content in grounding corpora.","Fabric","Map"],
+    [2,"Tag content by language and region in the catalog so coverage gaps are visible.","Purview","Measure"],
+    [3,"Consult affected user groups on what data a high-impact agent should and shouldn’t use.","Process","Govern"]],
+  "data|trans":[
+    [1,"Register every grounding source with a named owner in the Unified Catalog.","Purview","Govern"],
+    [2,"Summarize data sources in plain language in the agent’s documentation.","Process","Govern"],
+    [3,"Attach a full lineage report to the high-risk approval packet.","Purview","Map"]],
+  "data|acct":[
+    [1,"Assign a data owner and steward to each Fabric domain.","Fabric","Govern"],
+    [2,"Apply retention and deletion policies to AI interaction data.","Purview","Manage"],
+    [3,"Keep audit logs of access to grounding data, retained for investigations.","Purview","Manage"]],
+
+  "model|fair":[
+    [1,"Select only models with published transparency notes or model cards.","Foundry","Map"],
+    [2,"Run fairness assessments across demographic slices with the Responsible AI dashboard.","Azure ML","Measure"],
+    [3,"Set disparity thresholds that block release when exceeded.","Process","Manage"]],
+  "model|rel":[
+    [1,"Turn on Azure AI Content Safety filters for every deployment.","Foundry","Manage"],
+    [2,"Run groundedness and relevance evaluations before each release.","Foundry","Measure"],
+    [3,"Red team before release with automated adversarial testing plus human testers.","Foundry","Measure"]],
+  "model|priv":[
+    [1,"Use private networking and managed identities for model endpoints.","Foundry","Manage"],
+    [2,"Enable Prompt Shields to catch direct and indirect prompt injection.","Foundry","Manage"],
+    [3,"Test specifically for system prompt and sensitive data leakage.","Foundry","Measure"]],
+  "model|incl":[
+    [1,"Evaluate output quality in every language the system supports.","Foundry","Measure"],
+    [2,"Check outputs for readability and formatting that works with assistive technology.","Process","Measure"],
+    [3,"Include diverse reviewers on human evaluation panels.","Process","Measure"]],
+  "model|trans":[
+    [1,"Record model name, version, and provider in the central AI inventory.","Process","Govern"],
+    [2,"Turn on tracing so any output can be reconstructed after the fact.","Foundry","Measure"],
+    [3,"Publish an evaluation summary alongside the release approval.","Process","Govern"]],
+  "model|acct":[
+    [1,"Block deployment of any model without a registered owner.","Process","Govern"],
+    [2,"Pin model versions and require change review before upgrades.","Foundry","Manage"],
+    [3,"Require Responsible AI review board sign-off before production.","Process","Govern"]],
+
+  "agent|fair":[
+    [1,"Agents never make final decisions on hiring, pay, or eligibility.","Process","Govern"],
+    [2,"Monitor agent outcomes across user groups where lawful.","Copilot Studio","Measure"],
+    [3,"Route any recommendation about an individual to a human reviewer.","Copilot Studio","Manage"]],
+  "agent|rel":[
+    [1,"Build agents only in managed environments with DLP connector policies.","Copilot Studio","Manage"],
+    [2,"Require user confirmation before write actions like sending, deleting, or paying.","Copilot Studio","Manage"],
+    [3,"Roll out in stages with a kill switch and tested rollback plan.","Process","Manage"]],
+  "agent|priv":[
+    [1,"Run an oversharing assessment on SharePoint and OneDrive before enabling Copilot.","M365 Copilot","Map"],
+    [2,"Restrict Copilot discovery of sensitive sites until permissions are fixed.","M365 Copilot","Manage"],
+    [3,"Agents act with the signed-in user’s permissions, never broader service credentials.","Copilot Studio","Manage"]],
+  "agent|incl":[
+    [1,"Test agent interfaces against WCAG with Accessibility Insights.","Accessibility Insights","Measure"],
+    [2,"Offer a human alternative for every agent-handled task.","Process","Manage"],
+    [3,"Usability test with people with disabilities and non-native speakers.","Process","Measure"]],
+  "agent|trans":[
+    [1,"Tell users they’re interacting with AI and label AI-generated content.","Copilot Studio","Manage"],
+    [2,"Show citations to source documents in responses.","M365 Copilot","Manage"],
+    [3,"Publish a plain-language notice of what the agent can and can’t do.","Process","Govern"]],
+  "agent|acct":[
+    [1,"Register every agent in the AI inventory with a business owner.","Process","Govern"],
+    [2,"Require human code review of AI-generated code and block suggestions matching public code.","GitHub Copilot","Manage"],
+    [3,"Recertify high-risk agents every quarter.","Process","Govern"]],
+
+  "sec|fair":[
+    [1,"Include bias-eliciting prompts in red team test suites.","Foundry","Measure"],
+    [2,"Log and triage fairness complaints as incidents.","Process","Manage"],
+    [3,"Commission an independent fairness audit of high-risk systems each year.","Process","Measure"]],
+  "sec|rel":[
+    [1,"Discover unsanctioned AI apps in use with Defender for Cloud Apps.","Defender","Map"],
+    [2,"Turn on threat protection for AI workloads in Defender for Cloud.","Defender","Manage"],
+    [3,"Run AI incident playbooks in Sentinel with defined severity and escalation.","Sentinel","Manage"]],
+  "sec|priv":[
+    [1,"Apply Conditional Access and MFA to all AI apps.","Entra","Manage"],
+    [2,"Give each agent its own identity, covered by regular access reviews.","Entra","Govern"],
+    [3,"Flag risky AI usage with Insider Risk Management policies.","Purview","Measure"]],
+  "sec|incl":[
+    [1,"Deliver Responsible AI training to every builder in accessible formats.","Process","Govern"],
+    [2,"Staff red teams with testers across languages and cultural contexts.","Process","Measure"],
+    [3,"Test safety filters for over-blocking of dialects and minority languages.","Foundry","Measure"]],
+  "sec|trans":[
+    [1,"Use Purview DSPM for AI to see which AI apps touch sensitive data.","Purview","Measure"],
+    [2,"Retain prompt and response audit trails per policy for eDiscovery.","Purview","Manage"],
+    [3,"Report AI assurance status to leadership every quarter.","Process","Govern"]],
+  "sec|acct":[
+    [1,"Track control coverage against NIST AI RMF and the EU AI Act in Compliance Manager.","Purview","Govern"],
+    [2,"Put AI platform admin roles under Privileged Identity Management.","Entra","Manage"],
+    [3,"Audit the AI management system against ISO/IEC 42001 each year.","Process","Govern"]]
+};
+
+const TOOLS = ["All","Purview","Fabric","Foundry","Azure ML","Copilot Studio","M365 Copilot","GitHub Copilot","Entra","Defender","Sentinel","Accessibility Insights","Process"];
+const state = {tier:2, tool:"All", cell:"agent|priv"};
+
+const $ = id => document.getElementById(id);
+
+function renderTiers(){
+  $("tiers").innerHTML = TIERS.map(t=>`<button type="button" data-tier="${t.id}" aria-pressed="${t.id===state.tier}"><span class="dot" style="background:${t.color}"></span>${t.name}</button>`).join("");
+  $("tier-note").textContent = TIERS.find(t=>t.id===state.tier).note;
+}
+function renderTools(){
+  $("tools").innerHTML = TOOLS.map(t=>`<button type="button" data-tool="${t}" aria-pressed="${t===state.tool}">${t}</button>`).join("");
+}
+function active(key){
+  return C[key].filter(c=>c[0]<=state.tier && (state.tool==="All" || c[2]===state.tool));
+}
+function renderSummary(){
+  const all = Object.keys(C).flatMap(k=>active(k));
+  const tools = new Set(all.map(c=>c[2]).filter(t=>t!=="Process"));
+  const scope = state.tool==="All" ? "" : ` enforced through ${state.tool}`;
+  const toolText = state.tool==="All" ? ` across ${tools.size} platforms plus process controls` : "";
+  $("sum-text").innerHTML = `<strong>${all.length} controls</strong> required at ${TIERS[state.tier-1].name} risk${scope}${toolText}.`;
+  const counts = NIST.map(n=>({...n, v: all.filter(c=>c[3]===n.id).length}));
+  const total = all.length || 1;
+  $("nistbar").innerHTML = counts.map(n=>`<i style="width:${n.v/total*100}%;background:${n.color}"></i>`).join("");
+  $("nistlegend").innerHTML = counts.map(n=>`<span><span class="dot" style="background:${n.color}"></span>${n.id} ${n.v}</span>`).join("");
+}
+function renderGrid(){
+  let h = `<div class="corner"></div>` + PRINCIPLES.map(p=>`<div class="colhead">${p.name}</div>`).join("");
+  const max = state.tool==="All" ? state.tier : 3;
+  LAYERS.forEach(l=>{
+    h += `<div class="rowhead">${l.name}<small>${l.sub}</small></div>`;
+    PRINCIPLES.forEach(p=>{
+      const key = `${l.id}|${p.id}`;
+      const n = active(key).length;
+      const fill = n===0 ? 0 : Math.round(18 + (n/max)*62);
+      const dark = fill>55 ? " dark" : "";
+      h += `<button type="button" class="cell${dark}${n===0?" empty":""}" data-cell="${key}" style="--fill:${fill}%" aria-pressed="${key===state.cell}" aria-label="${l.name} layer, ${p.name}: ${n} control${n===1?"":"s"}"><span class="n">${n}</span><span class="u">control${n===1?"":"s"}</span></button>`;
+    });
+  });
+  $("grid").innerHTML = h;
+}
+function renderDetail(){
+  const [lid,pid] = state.cell.split("|");
+  const L = LAYERS.find(l=>l.id===lid), P = PRINCIPLES.find(p=>p.id===pid);
+  const list = C[state.cell];
+  const n = active(state.cell).length;
+  const items = list.map(c=>{
+    const t = TIERS[c[0]-1];
+    const locked = c[0] > state.tier;
+    const hit = state.tool!=="All" && c[2]===state.tool;
+    return `<li class="${locked?"locked":""}">
+      <span class="tier"><span class="dot" style="background:${t.color}"></span>${t.name}</span>
+      <p>${c[1]}</p>
+      <span class="tags"><span class="tag tool${hit?" hit":""}">${c[2]}</span><span class="tag">NIST ${c[3]}</span></span>
+      ${locked?`<span class="lock-note">Added when a system is rated ${t.name} risk</span>`:""}
+    </li>`;
+  }).join("");
+  $("detail").innerHTML = `<h2>${P.name} in the ${L.name.toLowerCase()} layer</h2>
+    <p class="sub">${n} of ${list.length} controls apply at ${TIERS[state.tier-1].name} risk${state.tool!=="All"?` for ${state.tool}`:""}.</p>
+    <ul class="ctl">${items}</ul>`;
+}
+function render(){renderTiers();renderTools();renderSummary();renderGrid();renderDetail();}
+
+document.addEventListener("click",e=>{
+  const b = e.target.closest("button");
+  if(!b) return;
+  if(b.dataset.tier){state.tier=+b.dataset.tier;render();}
+  else if(b.dataset.tool){state.tool=b.dataset.tool;render();}
+  else if(b.dataset.cell){
+    state.cell=b.dataset.cell;renderGrid();renderDetail();
+    if(window.innerWidth<760) $("detail").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
+    const again = document.querySelector(`[data-cell="${state.cell}"]`); if(again) again.focus({preventScroll:true});
+  }
+});
+render();
+</script>
+</body>
+</html>
