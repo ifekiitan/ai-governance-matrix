@@ -110,6 +110,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .ctl{list-style:none;margin:0;padding:0;display:grid;gap:0}
 .ctl li{padding:.85rem 0;border-top:1px solid var(--line);display:grid;grid-template-columns:5.2rem 1fr;gap:.25rem 1rem}
 .ctl li.locked{opacity:.45}
+.ctl li.other{opacity:.4}
+.hint{font-size:.9rem;color:var(--muted);margin:0 0 .5rem}
 .ctl .tier{font-size:.8rem;font-weight:650;display:flex;align-items:flex-start;gap:.4rem;padding-top:.2rem}
 .ctl .tier .dot{margin-top:.25rem}
 .ctl p{margin:0;max-width:44rem}
@@ -138,7 +140,7 @@ footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);color:v
 <body>
 <div class="wrap">
   <header>
-    <p class="byline">A portfolio concept by [Ife Kalejaiye]</p>
+    <p class="byline">A portfolio concept by Ife Kalejaiye</p>
     <h1>Governing agentic AI across the Microsoft stack</h1>
     <p class="lede">Seventy-two controls that map Microsoft’s six Responsible AI principles to the platforms that enforce them, from Fabric data to Copilot agents. Choose a risk tier, then tap any cell to see what’s required.</p>
     <p class="case-link"><a href="https://github.com/Ifekiitan/ai-governance-matrix/blob/main/case-study-hr-agent.md">See it in practice: a case study of governing a high-risk HR agent</a></p>
@@ -164,6 +166,7 @@ footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);color:v
     </div>
   </div>
 
+  <p class="hint">Tap any cell to see its controls below.</p>
   <div class="scroller">
     <div class="grid" id="grid" role="group" aria-label="Control matrix: layers by principles"></div>
   </div>
@@ -373,7 +376,8 @@ function renderDetail(){
     const t = TIERS[c[0]-1];
     const locked = c[0] > state.tier;
     const hit = state.tool!=="All" && c[2]===state.tool;
-    return `<li class="${locked?"locked":""}">
+    const other = state.tool!=="All" && c[2]!==state.tool;
+    return `<li class="${locked?"locked":""}${other?" other":""}">
       <span class="tier"><span class="dot" style="background:${t.color}"></span>${t.name}</span>
       <p>${c[1]}</p>
       <span class="tags"><span class="tag tool${hit?" hit":""}">${c[2]}</span><span class="tag">NIST ${c[3]}</span></span>
@@ -384,13 +388,19 @@ function renderDetail(){
     <p class="sub">${n} of ${list.length} controls apply at ${TIERS[state.tier-1].name} risk${state.tool!=="All"?` for ${state.tool}`:""}.</p>
     <ul class="ctl">${items}</ul>`;
 }
+function pickCell(){
+  if(state.tool==="All" || active(state.cell).length) return;
+  const keys = LAYERS.flatMap(l=>PRINCIPLES.map(p=>`${l.id}|${p.id}`));
+  const hit = keys.find(k=>active(k).length) || keys.find(k=>C[k].some(c=>c[2]===state.tool));
+  if(hit) state.cell = hit;
+}
 function render(){renderTiers();renderTools();renderSummary();renderGrid();renderDetail();}
 
 document.addEventListener("click",e=>{
   const b = e.target.closest("button");
   if(!b) return;
-  if(b.dataset.tier){state.tier=+b.dataset.tier;render();}
-  else if(b.dataset.tool){state.tool=b.dataset.tool;render();}
+  if(b.dataset.tier){state.tier=+b.dataset.tier;pickCell();render();}
+  else if(b.dataset.tool){state.tool=b.dataset.tool;pickCell();render();}
   else if(b.dataset.cell){
     state.cell=b.dataset.cell;renderGrid();renderDetail();
     if(window.innerWidth<760) $("detail").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});
